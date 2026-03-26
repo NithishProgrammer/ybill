@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Ybill | Instant Billing System</title>
+    <meta name="title" content="Ybill | Instant GST Invoice Generator & Billing System">
+    <meta name="description" content="Ybill is a fast, no-signup web billing system. Generate high-quality PDF invoices instantly for your business with GST support and local storage.">
+    <meta name="keywords" content="Ybill, invoice generator, free billing software, GST bill maker, instant invoice PDF, no signup billing, Puducherry developer tools">
+    <meta name="author" content="Nithish">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://nithishprogrammer.github.io/ybill"> <meta property="og:title" content="Ybill - Fast & Private Invoice Generator">
+    <meta property="og:description" content="Create professional business bills in seconds. No account required. Save locally, export to high-quality PDF.">
+
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Ybill",
+      "alternateName": "Ybill Invoice Generator",
+      "description": "A web-based billing system for instant high-quality PDF invoice generation without signup.",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "INR"
+      },
+      "author": {
+        "@type": "Person",
+        "name": "Nithish"
+      }
+    }
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .tab-active { border-bottom: 3px solid #000; color: #000; font-weight: 800; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen pb-10">
+
+    <div class="max-w-4xl mx-auto p-4 md:p-8">
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-bold text-gray-800">Ybill<span class="text-blue-600">Bill</span></h1>
+            <span class="text-xs bg-gray-200 px-2 py-1 rounded text-gray-600 uppercase font-bold tracking-widest">No-Signup Edition</span>
+        </header>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-gray-200">
+            <h2 class="text-lg font-semibold mb-4 flex items-center">🏢 Company Profile</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" id="comp-name" placeholder="Company Name" class="border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="text" id="comp-contact" placeholder="Company Contact (Phone/Email)" class="border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="text" id="comp-gstin" placeholder="Company GSTIN" class="border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                <input type="text" id="comp-address" placeholder="Full Address" class="border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none col-span-1 md:col-span-2">
+            </div>
+        </div>
+
+        <div class="flex space-x-4 mb-6 bg-white p-2 rounded-lg shadow-sm border border-gray-200">
+            <button onclick="switchTab('new')" id="btn-new" class="flex-1 py-2 text-center font-medium tab-active transition-all">New Bill</button>
+            <button onclick="switchTab('manage')" id="btn-manage" class="flex-1 py-2 text-center font-medium text-gray-500 transition-all">Modify / History</button>
+        </div>
+
+        <div id="tab-new">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-6">
+                <div>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase mb-3">Customer Details</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <input type="text" id="cust-name" placeholder="Customer Name" class="border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                        <input type="text" id="cust-contact" placeholder="Customer Contact" class="border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                        <input type="text" id="cust-gstin" placeholder="GSTIN (Optional)" class="border p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-sm font-bold text-gray-400 uppercase mb-3">Items & Products</h3>
+                    <div id="product-list" class="space-y-3">
+                        <div class="hidden md:grid grid-cols-6 gap-2 text-xs font-bold text-gray-500 px-2">
+                            <div class="col-span-3">DESCRIPTION</div>
+                            <div>QTY</div>
+                            <div>PRICE</div>
+                            <div class="text-right">SUBTOTAL</div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-6 gap-2 items-center item-row bg-gray-50 p-2 rounded border border-gray-100">
+                            <input type="text" placeholder="Item Name" class="md:col-span-3 border p-2 rounded p-name">
+                            <input type="number" value="1" placeholder="Qty" class="border p-2 rounded p-qty" oninput="calculateTotal()">
+                            <input type="number" placeholder="Price" class="border p-2 rounded p-price" oninput="calculateTotal()">
+                            <div class="text-right font-bold text-blue-600 px-2 p-subtotal">₹0</div>
+                        </div>
+                    </div>
+                    <button onclick="addProductRow()" class="mt-4 text-sm font-bold text-blue-600 hover:underline">+ Add Another Item</button>
+                </div>
+
+                <div class="border-t pt-6 flex justify-between items-center">
+                    <div class="text-gray-500">Grand Total:</div>
+                    <div class="text-3xl font-bold text-gray-800">₹<span id="grand-total">0</span></div>
+                </div>
+
+                <button onclick="generatePDF()" class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-blue-700 transition-all transform active:scale-95">Generate & Save Bill</button>
+            </div>
+        </div>
+
+        <div id="tab-manage" class="hidden">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 class="font-bold mb-4">Past Bills (LocalStorage)</h3>
+                <div id="history-list" class="space-y-3">
+                    <p class="text-gray-400 text-center py-10">No bills saved yet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pdf-container" style="position: absolute; left: -9999px;">
+        <div id="pdf-render-area" style="width: 700px; padding: 40px; background: white;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #eee; padding-bottom: 20px;">
+                <div>
+                    <h1 id="pdf-comp-name" style="font-size: 24px; margin: 0; color: #2563eb;"></h1>
+                    <p id="pdf-comp-addr" style="margin: 5px 0; font-size: 12px;"></p>
+                    <p id="pdf-comp-cont" style="margin: 2px 0; font-size: 12px;"></p>
+                    <p id="pdf-comp-gst" style="margin: 2px 0; font-size: 12px; font-weight: bold;"></p>
+                </div>
+                <div style="text-align: right;">
+                    <h2 style="margin: 0; color: #666;">INVOICE</h2>
+                    <p id="pdf-date" style="font-size: 12px;"></p>
+                </div>
+            </div>
+
+            <div style="margin: 30px 0;">
+                <p style="font-size: 10px; color: #888; margin: 0;">BILL TO:</p>
+                <h4 id="pdf-cust-name" style="margin: 5px 0;"></h4>
+                <p id="pdf-cust-cont" style="margin: 2px 0; font-size: 12px;"></p>
+                <p id="pdf-cust-gst" style="margin: 2px 0; font-size: 12px;"></p>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                <thead>
+                    <tr style="background: #f8f8f8; font-size: 12px; text-align: left;">
+                        <th style="padding: 10px; border: 1px solid #eee;">Item</th>
+                        <th style="padding: 10px; border: 1px solid #eee; width: 60px;">Qty</th>
+                        <th style="padding: 10px; border: 1px solid #eee; width: 100px;">Price</th>
+                        <th style="padding: 10px; border: 1px solid #eee; width: 100px; text-align: right;">Total</th>
+                    </tr>
+                </thead>
+                <tbody id="pdf-items"></tbody>
+            </table>
+
+            <div style="text-align: right; margin-top: 30px;">
+                <h3 style="margin: 0;">Total Amount: ₹<span id="pdf-total"></span></h3>
+            </div>
+
+            <div style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 10px; font-size: 10px; color: #555; text-align: center;">
+                This Bill is verified and generated by <span id="pdf-footer-comp"></span>  through Ybill
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab Switching Logic
+        function switchTab(tab) {
+            const tabs = ['new', 'manage'];
+            tabs.forEach(t => {
+                document.getElementById('tab-' + t).classList.add('hidden');
+                document.getElementById('btn-' + t).classList.remove('tab-active');
+                document.getElementById('btn-' + t).classList.add('text-gray-500');
+            });
+            document.getElementById('tab-' + tab).classList.remove('hidden');
+            document.getElementById('btn-' + tab).classList.add('tab-active');
+            if(tab === 'manage') loadHistory();
+        }
+
+        // Add Product Row
+        function addProductRow() {
+            const div = document.createElement('div');
+            div.className = "grid grid-cols-1 md:grid-cols-6 gap-2 items-center item-row bg-gray-50 p-2 rounded border border-gray-100 mt-2";
+            div.innerHTML = `
+                <input type="text" placeholder="Item Name" class="md:col-span-3 border p-2 rounded p-name">
+                <input type="number" value="1" placeholder="Qty" class="border p-2 rounded p-qty" oninput="calculateTotal()">
+                <input type="number" placeholder="Price" class="border p-2 rounded p-price" oninput="calculateTotal()">
+                <div class="text-right font-bold text-blue-600 px-2 p-subtotal">₹0</div>
+                <button onclick="this.parentElement.remove(); calculateTotal()" class="text-red-400 text-xs text-right">Remove</button>
+            `;
+            document.getElementById('product-list').appendChild(div);
+        }
+
+        // Calculate Totals
+        function calculateTotal() {
+            let grandTotal = 0;
+            document.querySelectorAll('.item-row').forEach(row => {
+                const qty = parseFloat(row.querySelector('.p-qty').value) || 0;
+                const price = parseFloat(row.querySelector('.p-price').value) || 0;
+                const sub = qty * price;
+                row.querySelector('.p-subtotal').innerText = '₹' + sub.toFixed(2);
+                grandTotal += sub;
+            });
+            document.getElementById('grand-total').innerText = grandTotal.toFixed(2);
+        }
+
+        // PDF Generation and Saving
+        async function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            
+            // Fill PDF Template
+            document.getElementById('pdf-comp-name').innerText = document.getElementById('comp-name').value || 'My Company';
+            document.getElementById('pdf-comp-addr').innerText = document.getElementById('comp-address').value;
+            document.getElementById('pdf-comp-cont').innerText = "Contact: " + document.getElementById('comp-contact').value;
+            document.getElementById('pdf-comp-gst').innerText = "GSTIN: " + document.getElementById('comp-gstin').value;
+            
+            document.getElementById('pdf-cust-name').innerText = document.getElementById('cust-name').value || 'Walk-in Customer';
+            document.getElementById('pdf-cust-cont').innerText = "Contact: " + document.getElementById('cust-contact').value;
+            document.getElementById('pdf-cust-gst').innerText = "GSTIN: " + document.getElementById('cust-gstin').value;
+            
+            document.getElementById('pdf-date').innerText = "Date: " + new Date().toLocaleDateString();
+            document.getElementById('pdf-total').innerText = document.getElementById('grand-total').innerText;
+            document.getElementById('pdf-footer-comp').innerText = document.getElementById('comp-name').value || 'InstantBill';
+
+            // Fill Items in PDF Table
+            const tbody = document.getElementById('pdf-items');
+            tbody.innerHTML = '';
+            const itemsToSave = [];
+            document.querySelectorAll('.item-row').forEach(row => {
+                const name = row.querySelector('.p-name').value;
+                const qty = row.querySelector('.p-qty').value;
+                const price = row.querySelector('.p-price').value;
+                const sub = (qty * price).toFixed(2);
+
+                if(name) {
+                    tbody.innerHTML += `
+                        <tr style="font-size: 11px;">
+                            <td style="padding: 10px; border: 1px solid #eee;">${name}</td>
+                            <td style="padding: 10px; border: 1px solid #eee;">${qty}</td>
+                            <td style="padding: 10px; border: 1px solid #eee;">${price}</td>
+                            <td style="padding: 10px; border: 1px solid #eee; text-align: right;">₹${sub}</td>
+                        </tr>
+                    `;
+                    itemsToSave.push({name, qty, price, sub});
+                }
+            });
+
+            // LocalStorage Save
+            saveBillToLocal({
+                id: Date.now(),
+                customer: document.getElementById('cust-name').value,
+                total: document.getElementById('grand-total').innerText,
+                items: itemsToSave,
+                date: new Date().toLocaleString()
+            });
+
+            // Render to Canvas then PDF
+            const element = document.getElementById('pdf-render-area');
+            const canvas = await html2canvas(element, { scale: 2 });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const imgProps = pdf.getImageProperties(imgData);
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`${document.getElementById('cust-name').value || 'Bill'}_Invoice.pdf`);
+        }
+
+        function saveBillToLocal(bill) {
+            const bills = JSON.parse(localStorage.getItem('ib_bills') || '[]');
+            bills.push(bill);
+            localStorage.setItem('ib_bills', JSON.stringify(bills));
+        }
+
+        function loadHistory() {
+            const container = document.getElementById('history-list');
+            const bills = JSON.parse(localStorage.getItem('ib_bills') || '[]');
+            if(bills.length === 0) return;
+
+            container.innerHTML = bills.reverse().map(bill => `
+                <div class="flex justify-between items-center p-3 border rounded hover:bg-gray-50">
+                    <div>
+                        <div class="font-bold">${bill.customer || 'Unnamed Customer'}</div>
+                        <div class="text-xs text-gray-400">${bill.date}</div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="font-bold">₹${bill.total}</span>
+                        <button onclick="deleteBill(${bill.id})" class="text-red-500 text-sm">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function deleteBill(id) {
+            let bills = JSON.parse(localStorage.getItem('ib_bills') || '[]');
+            bills = bills.filter(b => b.id !== id);
+            localStorage.setItem('ib_bills', JSON.stringify(bills));
+            loadHistory();
+        }
+    </script>
+</body>
+</html>
